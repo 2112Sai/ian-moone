@@ -1,15 +1,132 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Search</title>
+    <style>
+        /* --- CONFIGURATION & STYLES --- */
+        :root {
+            --bg-color: #050505;
+            --text-color: #e0e0e0;
+            --accent-color: #888;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Georgia', serif; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Typography */
+        h2 { font-weight: normal; font-size: 1rem; color: var(--accent-color); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; }
+        #poem-body { white-space: pre-line; line-height: 1.8; font-size: 1.1rem; max-width: 600px; margin-bottom: 50px; min-height: 150px; }
+        
+        /* Navigation & Tools */
+        .nav-container { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        
+        .nav-btn, .tool-btn { 
+            background: none; 
+            border: 1px solid #333; 
+            color: #666; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-family: sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-btn { padding: 10px 20px; font-size: 1.2rem; }
+        .tool-btn { padding: 10px; border-radius: 5px; }
+        
+        .nav-btn:hover:not(:disabled), .tool-btn:hover { border-color: #fff; color: #fff; }
+        .nav-btn:disabled { opacity: 0.2; cursor: default; }
+
+        /* Hidden Date Picker */
+        #date-picker { display: none; }
+
+        /* Action Bar */
+        .action-bar { display: flex; gap: 15px; margin-bottom: 50px; }
+        .icon-btn { background: none; border: 1px solid #333; color: #888; padding: 8px 16px; border-radius: 50px; text-decoration: none; font-size: 0.75rem; transition: all 0.3s ease; cursor: pointer; font-family: sans-serif; }
+        .icon-btn:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.05); }
+
+        /* Footer Info */
+        .counter-text { 
+            font-family: 'Courier New', monospace; 
+            font-size: 1.1rem; /* Larger */
+            font-weight: bold;
+            color: #666; 
+            letter-spacing: 1px; 
+            text-transform: uppercase; 
+            margin-bottom: 5px; 
+        }
+        
+        footer { 
+            margin-top: 80px; /* Further down */
+            font-size: 0.85rem; /* Larger */
+            color: #444; 
+            font-style: italic; 
+            max-width: 350px; 
+            line-height: 1.6; 
+        }
+    </style>
+</head>
+<body>
+
+    <h2 id="poem-title">Loading...</h2>
+    <div id="poem-body"></div>
+
+    <div class="nav-container">
+        <button id="prevBtn" class="nav-btn" onclick="changePoem(-1)">&lt;</button>
+        
+        <button class="tool-btn" onclick="openCalendar()" title="Jump to date">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        </button>
+        <input type="date" id="date-picker" onchange="jumpToDate(this.value)">
+
+        <button id="nextBtn" class="nav-btn" onclick="changePoem(1)">&gt;</button>
+    </div>
+
+    <div class="action-bar">
+        <a href="https://ko-fi.com/" target="_blank" class="icon-btn">support the search</a>
+        <button class="icon-btn" onclick="sharePoem()">help her find me</button>
+    </div>
+
+    <div id="day-counter" class="counter-text">Day 1 — 00:00:00</div>
+
+    <footer>
+        the project will end when she finds me <br> or when our love has run out
+    </footer>
+
+    <script>
         // --- CONFIGURATION ---
-        // Use (Year, Month-1, Day) to ensure Local Time
-        // For Dec 14, 2025: (2025, 11, 14)
-        const START_DATE = new Date(2025, 11, 14); 
+        // Dec 14, 2025 at Midnight (00:00:00) Local Time
+        const START_DATE = new Date(2025, 11, 14, 0, 0, 0); 
         // ---------------------
 
         let poems = [];
         let currentIndex = 0;
 
         window.onload = function() {
-            updateCounter();
+            // Start the live clock immediately
+            setInterval(updateCounter, 1000);
+            updateCounter(); 
+            
             loadPoems();
         };
 
@@ -17,27 +134,19 @@
             fetch('poems.json')
                 .then(response => response.json())
                 .then(data => {
-                    // FIX: Get Local Date correctly (YYYY-MM-DD)
                     const dateObj = new Date();
                     const year = dateObj.getFullYear();
                     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
                     const day = String(dateObj.getDate()).padStart(2, '0');
                     const today = `${year}-${month}-${day}`;
                     
-                    // 1. Filter future poems
                     poems = data.filter(p => p.date <= today);
-                    
-                    // 2. Sort poems
                     poems.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-                    // 3. Configure Calendar Constraints
                     const dateInput = document.getElementById('date-picker');
                     dateInput.max = today;
-                    if (poems.length > 0) {
-                        dateInput.min = poems[0].date;
-                    }
+                    if (poems.length > 0) dateInput.min = poems[0].date;
 
-                    // 4. Check for Deep Link or Load Latest
                     const urlParams = new URLSearchParams(window.location.search);
                     const linkedDate = urlParams.get('date');
 
@@ -52,9 +161,8 @@
                         currentIndex = poems.length - 1;
                     }
 
-                    if (poems.length > 0) {
-                        renderPoem();
-                    } else {
+                    if (poems.length > 0) renderPoem();
+                    else {
                         document.getElementById('poem-body').innerText = "No signals found yet.";
                         document.getElementById('poem-title').innerText = "";
                     }
@@ -64,21 +172,16 @@
 
         function renderPoem() {
             if (!poems[currentIndex]) return;
-            
             const p = poems[currentIndex];
             document.getElementById('poem-title').innerText = p.title || ''; 
-            
             const bodyEl = document.getElementById('poem-body');
             bodyEl.style.opacity = 0;
-            
             setTimeout(() => {
                 bodyEl.innerText = p.body;
                 bodyEl.style.opacity = 1;
             }, 200);
-            
             const newUrl = `${window.location.pathname}?date=${p.date}`;
             window.history.replaceState(null, '', newUrl);
-
             document.getElementById('prevBtn').disabled = (currentIndex === 0);
             document.getElementById('nextBtn').disabled = (currentIndex === poems.length - 1);
         }
@@ -103,30 +206,42 @@
         }
 
         function updateCounter() {
-            const today = new Date();
-            // Zero out time to compare strictly by Calendar Day
-            today.setHours(0,0,0,0);
+            const now = new Date();
+            const diffTime = now - START_DATE;
             
-            const start = new Date(START_DATE);
-            start.setHours(0,0,0,0);
+            if (diffTime < 0) {
+                 document.getElementById('day-counter').innerText = `Day 1 — 00:00:00`;
+                 return;
+            }
 
-            const diffTime = today - start;
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; 
-            
-            document.getElementById('day-counter').innerText = `Day ${diffDays} of the search`;
+            // Calculate Day Number (Day 1, Day 2...)
+            // 1000ms * 60s * 60m * 24h = 86400000ms per day
+            const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const currentDay = daysPassed + 1;
+
+            // Calculate Hours/Min/Sec into the current day
+            const msIntoDay = diffTime % (1000 * 60 * 60 * 24);
+            const hours = Math.floor(msIntoDay / (1000 * 60 * 60));
+            const minutes = Math.floor((msIntoDay % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((msIntoDay % (1000 * 60)) / 1000);
+
+            // Format with leading zeros (e.g., 05 instead of 5)
+            const hStr = String(hours).padStart(2, '0');
+            const mStr = String(minutes).padStart(2, '0');
+            const sStr = String(seconds).padStart(2, '0');
+
+            document.getElementById('day-counter').innerText = `Day ${currentDay} — ${hStr}:${mStr}:${sStr}`;
         }
 
         function sharePoem() {
             if (poems.length === 0) return;
             const currentPoem = poems[currentIndex];
             const deepLink = `${window.location.origin}${window.location.pathname}?date=${currentPoem.date}`;
-
             const shareData = {
                 title: 'Help her find me',
                 text: `"${currentPoem.body.substring(0, 40)}..." \n\nHelp her find me.`,
                 url: deepLink
             };
-
             if (navigator.share) {
                 navigator.share(shareData).catch(console.error);
             } else {
@@ -135,3 +250,5 @@
             }
         }
     </script>
+</body>
+</html>
