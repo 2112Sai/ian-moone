@@ -8,7 +8,7 @@
         /* --- CONFIGURATION & STYLES --- */
         :root {
             --bg-color: #050505;
-            --text-color: #e0e0e0;
+            --text-color: #e0e0e0; 
             --accent-color: #888;
         }
 
@@ -63,7 +63,7 @@
         /* Footer Info */
         .counter-text { 
             font-family: 'Courier New', monospace; 
-            font-size: 1.1rem; /* Larger */
+            font-size: 1.1rem; 
             font-weight: bold;
             color: #666; 
             letter-spacing: 1px; 
@@ -72,12 +72,13 @@
         }
         
         footer { 
-            margin-top: 80px; /* Further down */
-            font-size: 0.85rem; /* Larger */
-            color: #444; 
+            margin-top: 45px; /* The Happy Medium */
+            font-size: 0.85rem; 
+            color: #e6e6cf; /* Soft Off-White/Yellow */
             font-style: italic; 
-            max-width: 350px; 
+            max-width: 400px; 
             line-height: 1.6; 
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -110,7 +111,9 @@
     <div id="day-counter" class="counter-text">Day 1 — 00:00:00</div>
 
     <footer>
-        the project will end when she finds me <br> or when our love has run out
+        the project will end when she finds me,<br> 
+        when we marry,<br> 
+        or when her love for me runs out
     </footer>
 
     <script>
@@ -214,18 +217,14 @@
                  return;
             }
 
-            // Calculate Day Number (Day 1, Day 2...)
-            // 1000ms * 60s * 60m * 24h = 86400000ms per day
             const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             const currentDay = daysPassed + 1;
 
-            // Calculate Hours/Min/Sec into the current day
             const msIntoDay = diffTime % (1000 * 60 * 60 * 24);
             const hours = Math.floor(msIntoDay / (1000 * 60 * 60));
             const minutes = Math.floor((msIntoDay % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((msIntoDay % (1000 * 60)) / 1000);
 
-            // Format with leading zeros (e.g., 05 instead of 5)
             const hStr = String(hours).padStart(2, '0');
             const mStr = String(minutes).padStart(2, '0');
             const sStr = String(seconds).padStart(2, '0');
