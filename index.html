@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Search</title>
+    <style>
+        /* --- CONFIGURATION & STYLES --- */
+        :root {
+            --bg-color: #050505;
+            --text-color: #e0e0e0;
+            --accent-color: #888;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Georgia', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Typography */
+        h2 {
+            font-weight: normal;
+            font-size: 1rem;
+            color: var(--accent-color);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+
+        #poem-body {
+            white-space: pre-line;
+            line-height: 1.8;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin-bottom: 50px;
+        }
+
+        /* Navigation */
+        .nav-container {
+            margin-bottom: 30px;
+        }
+
+        .nav-btn {
+            background: none;
+            border: 1px solid #333;
+            color: #666;
+            padding: 10px 25px;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+            .nav-btn:hover:not(:disabled) {
+                border-color: #fff;
+                color: #fff;
+            }
+
+            .nav-btn:disabled {
+                opacity: 0.2;
+                cursor: default;
+            }
+
+        /* Action Bar (Share/Support) */
+        .action-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: 1px solid #333;
+            color: #888;
+            padding: 8px 16px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-family: sans-serif;
+        }
+
+            .icon-btn:hover {
+                border-color: #fff;
+                color: #fff;
+                background: rgba(255,255,255,0.05);
+            }
+
+        /* Footer Info */
+        .counter-text {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #444;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            color: #333;
+            font-style: italic;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <h2 id="poem-title">Loading...</h2>
+    <div id="poem-body"></div>
+
+    <div class="nav-container">
+        <button id="prevBtn" class="nav-btn" onclick="changePoem(-1)">&lt;</button>
+        <button id="nextBtn" class="nav-btn" onclick="changePoem(1)">&gt;</button>
+    </div>
+
+    <div class="action-bar">
+        <a href="https://ko-fi.com/" target="_blank" class="icon-btn">support the search</a>
+        <button class="icon-btn" onclick="sharePoem()">help her find me</button>
+    </div>
+
+    <div id="day-counter" class="counter-text">Day 0</div>
+
+    <footer>
+        the project will end when she finds me <br> or when our love has run out
+    </footer>
+
+    <script>
+        // --- CONFIGURATION ---
+        const START_DATE = new Date("2025-12-01"); // UPDATE THIS to your start date
+        // ---------------------
+
+        let poems = [];
+        let currentIndex = 0;
+
+        // 1. Initialize
+        window.onload = function() {
+            updateCounter();
+            loadPoems();
+        };
+
+        // 2. Load and Filter Data
+        function loadPoems() {
+            fetch('poems.json')
+                .then(response => response.json())
+                .then(data => {
+                    const today = new Date().toISOString().split('T')[0];
+
+                    // Filter for poems released ON or BEFORE today
+                    poems = data.filter(p => p.date <= today);
+
+                    // Sort by date (oldest to newest)
+                    poems.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                    if (poems.length > 0) {
+                        // Set view to the LATEST poem
+                        currentIndex = poems.length - 1;
+                        renderPoem();
+                    } else {
+                        document.getElementById('poem-body').innerText = "No signals found yet.";
+                        document.getElementById('poem-title').innerText = "";
+                    }
+                })
+                .catch(err => console.error("Error loading manifest:", err));
+        }
+
+        // 3. Render View
+        function renderPoem() {
+            const p = poems[currentIndex];
+            document.getElementById('poem-title').innerText = p.title || '';
+
+            // Fade effect (simple)
+            const bodyEl = document.getElementById('poem-body');
+            bodyEl.style.opacity = 0;
+            setTimeout(() => {
+                bodyEl.innerText = p.body;
+                bodyEl.style.opacity = 1;
+            }, 200);
+
+            // Button Logic
+            document.getElementById('prevBtn').disabled = (currentIndex === 0);
+            document.getElementById('nextBtn').disabled = (currentIndex === poems.length - 1);
+        }
+
+        // 4. Navigation
+        function changePoem(dir) {
+            currentIndex += dir;
+            renderPoem();
+        }
+
+        // 5. Day Counter Logic
+        function updateCounter() {
+            const today = new Date();
+            const diffTime = Math.abs(today - START_DATE);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            document.getElementById('day-counter').innerText = `Day ${diffDays} of the search`;
+        }
+
+        // 6. Share Logic
+        function sharePoem() {
+            if (poems.length === 0) return;
+            const currentPoem = poems[currentIndex];
+            const shareData = {
+                title: 'Help her find me',
+                text: `"${currentPoem.body.substring(0, 40)}..." \n\nHelp her find me.`,
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert("Link copied to clipboard.");
+            }
+        }
+    </script>
+</body>
+</html>
